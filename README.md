@@ -10,11 +10,12 @@ The data was gathered and entered in a team effort.
   1.3 ! Plot about sampled species per climate and exclosure treatment !
 
 2. Boxplots about size differences 
-  1.1 Size differences between climate treatments per species 
+  1.1 !! Size differences between climate treatments per species !!
     1.11 including t.test to see significant difference
   1.2 Size differences between climate and treatment per species
     1.12 anova
 
 3. Comparison size flower output.
 
-! Problem with y axis not beeing continues ! -> solved, the values were factors and not numeric
+!   Problem with y axis not beeing continues ! -> solved, the values were factors and not numeric
+!!  Problem with "?" in the data and therefore non numeric values in the leaf sizes !! 
