@@ -10,6 +10,9 @@ library(ggthemes)
 setwd("~/Documents/Germany/Other/Martin/GCEF_Data/R_table/")
 excl_gcef <- read.csv("Tab_excl_BL.csv", stringsAsFactors = F)
 
+#  create new column with climate and treatment and subset for it
+excl_gcef[,"clim_trea"] <- paste(excl_gcef$climate, excl_gcef$treatment, sep = "_")
+
 #   1.1 get overview about columns (what's Factor, what's num, what's character... had problems once)
 str(excl_gcef)
 
@@ -36,10 +39,6 @@ for(i in 1:length(treats))
   #name list entries
   names(treat_subs)[i] <- treats[i]
 }
-
-#   1.5 create new column with climate and treatment and subset for it
-excl_gcef[,"clim_trea"] <- paste(excl_gcef$climate, excl_gcef$treatment, sep = "_")
-unique(excl_gcef$treatment)
 
 # 2. first plots about count of individuals per species
 #   2.1 without any treatment (Angeb plots)
@@ -88,11 +87,11 @@ spec_count_treat <- data.frame(species = colnames(spec_counts_treat[, 3:ncol(spe
 
 spec_count_treat$species <- unique(excl_gcef$species)   
 
-test <- melt(spec_count_treat, id.vars = "species")
+spec_count_treat <- melt(spec_count_treat, id.vars = "species")
 
 col_pal <- c("sienna1", "sienna3", "palegreen", "palegreen3", "cyan1", "cyan3", "azure2", "azure4")
 
-ggplot(test, aes(x = species, y = value, fill = variable, color = species)) + 
+ggplot(spec_count_treat, aes(x = species, y = value, fill = variable, color = species)) + 
   geom_bar(stat = "identity", position = "dodge") + scale_fill_manual(values = col_pal, 
                                                                       labels = c("Control ambient", "Control future",
                                                                                  "Insect ambient" , "Insect future",
@@ -102,5 +101,32 @@ ggplot(test, aes(x = species, y = value, fill = variable, color = species)) +
   theme_stata() + theme(axis.text.y = element_text(angle = 0)) + ylab("Individuals") + 
   xlab("Species") + scale_color_economist() + guides(color = F, fill = guide_legend(title = "Treatment"))
   
+# 3. Boxplots about size differences concerning different aspects
+#   3.1 Size comparison between climates
+ggplot(diam_specs, aes(x = species, y = area_cm2, fill = climate, color = species)) + geom_boxplot() + 
+  scale_fill_brewer(labels = c("Ambient", "Future")) + theme_stata() + 
+  guides(color = F, fill = guide_legend(title = "Climate")) + ylab("Size (in cm2)") + 
+  xlab("Species") #+ scale_color_manual() #change species color later to something which is always the same
 
-  
+#   3.2 Size comparison between climate and treatment
+ggplot(diam_specs, aes(x = species, y = area_cm2, fill = clim_trea)) + geom_boxplot() #change order to what the barplots are like!!!
+
+# 4. Size ~ Flowers count
+#   4.1 subset the different species into a list 
+specs_dia <- unique(diam_specs$species)
+spec_list_dia <- c()
+
+for(i in 1:length(specs_dia))
+{
+  spec_list_dia[i] <- list(assign(paste(specs_dia[i]), subset(excl_gcef, species == specs_dia[i])))
+  rm(list = specs_dia[i])
+  names(spec_list_dia)[i] <- specs_dia[i]
+}
+
+plot_outs <- c()
+for(i in 1:length(spec_list_dia))
+  plot_outs[i] <- list(ggplot(spec_list_dia[[i]], aes(x = flowers_number, y = area_cm2)) +
+                         geom_point() + ggtitle(paste(spec_list_dia[[i]][,"species"])) + 
+  geom_smooth(method = "lm") + theme_stata() + ylab("Size (in cm2)"), xlab("Flower count"))
+
+plot(lm(spec_list_dia[[1]][, "flowers_number"] ~ spec_list_dia[[1]][, "area_cm2"]))
