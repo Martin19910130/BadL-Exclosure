@@ -1,5 +1,19 @@
 # BadL-Exclosure
 Rcode for first year of data collection in BadL
+This Code and Readme is written by myself in R using the packages ggplot, reshape, ggthemes
+The data was gathered and entered in a team effort.
 
-das ist eine readme
+
+1. Basic Plots to show of the work we did
+  1.1 Plot about overall sampled individuals per species
+  1.2 Plot about sampled species per climate treatment
+  1.3 Plot about sampled species per climate and exclosure treatment
+
+2. Boxplots about size differences 
+  1.1 Size differences between climate treatments per species 
+    1.11 including t.test to see significant difference
+  1.2 Size differences between climate and treatment per species
+    1.12 anova
+
+3. Comparison size flower output.
 
