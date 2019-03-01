@@ -7,7 +7,7 @@ library(reshape2)
 library(ggthemes)
 
 # 1. read data into R and prepare it for the Work
-setwd("~/Documents/Germany/Other/Martin/GCEF_Data/R_table/")
+setwd("C:/Users/ma22buky/Documents/GCEF_Data_demografie/R_table")
 excl_gcef <- read.csv("Tab_excl_BL.csv", stringsAsFactors = F)
 
 #  create new column with climate and treatment and subset for it
@@ -44,10 +44,9 @@ for(i in 1:length(treats))
 #   2.1 without any treatment (Angeb plots)
 spec_count_all <- as.data.frame(table(excl_gcef$species))
 
-ggplot(spec_count_all, aes(x = Var1, y = Freq, fill = Var1)) + geom_bar(stat = "identity") + ylab("Count") + 
+ggplot(spec_count_all, aes(x = Var1, y = Freq, fill = Var1)) + geom_bar(stat = "identity") + ylab("Individuals") + 
   xlab("Species") + 
-  ggtitle("Individual's per species") + theme_stata() + scale_fill_economist() + guides(fill = F) + 
-  theme(axis.text.x = element_text(angle = 90))
+  ggtitle("Individuals per species") + theme_stata() + scale_fill_economist() + guides(fill = F) 
 
 rm(spec_count_all)
 
@@ -67,7 +66,7 @@ ggplot(clim_specs_count, aes(x = species, y = value, fill = variable, color = sp
   guides(color = F, fill = guide_legend(title = "Climate", 
                                         lable.theme = element_text(c("Future", "Ambient")))) + 
   scale_fill_brewer(labels = c("Future", "Ambient")) + theme(axis.text.x = element_text(angle = 90)) +
-  ylab("Individuals") + xlab("Species")
+  ylab("Individuals") + xlab("Species") + ggtitle("Individuals per climate treatment")
 
 #   2.3 treatment comparison including ins, path, ins + path, con
 spec_counts <- c()
@@ -85,7 +84,7 @@ spec_count_treat <- data.frame(species = colnames(spec_counts_treat[, 3:ncol(spe
                                patho_ambient = as.numeric(as.character(spec_counts_treat[4, 3:ncol(spec_counts_treat)])),
                                patho_future = as.numeric(as.character(spec_counts_treat[8, 3:ncol(spec_counts_treat)])))
 
-spec_count_treat$species <- unique(excl_gcef$species)   
+spec_count_treat$species <- sort(unique(excl_gcef$species))   
 
 spec_count_treat <- melt(spec_count_treat, id.vars = "species")
 
@@ -99,20 +98,37 @@ ggplot(spec_count_treat, aes(x = species, y = value, fill = variable, color = sp
                                                                                  "Insect and pathogen future" ,
                                                                                  "Pathogen ambient", "Pathogen future")) +
   theme_stata() + theme(axis.text.y = element_text(angle = 0)) + ylab("Individuals") + 
-  xlab("Species") + scale_color_economist() + guides(color = F, fill = guide_legend(title = "Treatment"))
+  xlab("Species") + scale_color_economist() + guides(color = F, fill = guide_legend(title = "Treatment")) + 
+  geom_hline(yintercept = 50) + ggtitle("Individuals per treatment")
   
 # 3. Boxplots about size differences concerning different aspects
 #   3.1 Size comparison between climates
-ggplot(diam_specs, aes(x = species, y = area_cm2, fill = climate, color = species)) + geom_boxplot() + 
+specs_dia <- unique(diam_specs$species)
+spec_list_dia <- c()
+
+for(i in 1:length(specs_dia))
+{
+  spec_list_dia[i] <- list(assign(paste(specs_dia[i]), subset(excl_gcef, species == specs_dia[i])))
+  rm(list = specs_dia[i])
+  names(spec_list_dia)[i] <- specs_dia[i]
+}
+
+ggplot(diam_specs, aes(x = species, y = area_cm2, fill = climate)) + geom_boxplot() + 
   scale_fill_brewer(labels = c("Ambient", "Future")) + theme_stata() + 
   guides(color = F, fill = guide_legend(title = "Climate")) + ylab("Size (in cm2)") + 
-  xlab("Species") #+ scale_color_manual() #change species color later to something which is always the same
+  xlab("Species")
+
+t.test(spec_list_dia[[1]][, "area_cm2"] ~ spec_list_dia[[1]][, "climate"])
+t.test(spec_list_dia[[2]][, "area_cm2"] ~ spec_list_dia[[2]][, "climate"])
+t.test(spec_list_dia[[3]][, "area_cm2"] ~ spec_list_dia[[3]][, "climate"])
+t.test(spec_list_dia[[4]][, "area_cm2"] ~ spec_list_dia[[4]][, "climate"])
+t.test(spec_list_dia[[5]][, "area_cm2"] ~ spec_list_dia[[5]][, "climate"])
 
 #   3.2 Size comparison between climate and treatment
 ggplot(diam_specs, aes(x = species, y = area_cm2, fill = clim_trea)) + geom_boxplot() #change order to what the barplots are like!!!
 
 # 4. Size ~ Flowers count
-#   4.1 subset the different species into a list 
+#   4.1 subset the different species into a list, first diameter specs 
 specs_dia <- unique(diam_specs$species)
 spec_list_dia <- c()
 
@@ -125,8 +141,66 @@ for(i in 1:length(specs_dia))
 
 plot_outs <- c()
 for(i in 1:length(spec_list_dia))
-  plot_outs[i] <- list(ggplot(spec_list_dia[[i]], aes(x = flowers_number, y = area_cm2)) +
+  plot_outs[i] <- list(ggplot(spec_list_dia[[i]], aes(x = flowers_1st_harvest, y = area_cm2)) +
                          geom_point() + ggtitle(paste(spec_list_dia[[i]][,"species"])) + 
   geom_smooth(method = "lm") + theme_stata() + ylab("Size (in cm2)"), xlab("Flower count"))
 
-plot(lm(spec_list_dia[[1]][, "flowers_number"] ~ spec_list_dia[[1]][, "area_cm2"]))
+#calculate stats for lms
+lm_sums <- c()
+for(i in 1:length(spec_list_dia))
+{
+  lm_sums[i] <- list(lm(spec_list_dia[[i]] [,"flowers_1st_harvest"] ~ spec_list_dia[[i]][,"area_cm2"]))
+  names(lm_sums)[i] <- names(spec_list_dia)[i]
+}
+
+names(lm_sums)
+
+#   4.2 do the same but for the leafe count species
+specs_lea <- unique(leaf_specs$species)
+spec_list_lea <- c()
+
+for(i in 1:length(specs_lea))
+{
+  spec_list_lea[i] <- list(assign(paste(specs_lea[i]), subset(leaf_specs, species == specs_lea[i])))
+  rm(list = specs_lea[i])
+  
+  names(spec_list_lea)[i] <- specs_lea[i]
+}
+
+ggplot(spec_list_lea[[1]], aes(x = flowers_1st_harvest, y = leaf_number)) + geom_point()
+
+
+ #test IPm already 
+pla_lan <- subset(excl_gcef, species == "Pla_lan" & plot == "1_1")
+pla_lan$leaf_number[is.na(pla_lan$leaf_number)] <- 0
+pla_lan$seedl_start_sum <- sum(pla_lan$X.seedlings, na.rm = T)
+
+pla_lan <- subset(pla_lan, leaf_number != "NA")
+pla_lan$stage <- "continuous" 
+
+pla_lan$leaf_number_august18[is.na(pla_lan$leaf_number_august18)] <- 0
+
+for(i in 1:nrow(pla_lan))
+{
+  if(pla_lan[i, "leaf_number_august18"] == 0)
+    pla_lan[i, "stagenext"] <- "dead"
+  else
+    pla_lan[i, "stagenext"] <- "continuous"
+}
+pla_lan$surv <- ifelse(pla_lan$stagenext == "dead", 0, 1)
+pla_lan$leaf_number_august18 <- ifelse(pla_lan$stagenext == "dead", NA, pla_lan$leaf_number_august18)
+
+library(IPMpack)
+
+test <- data.frame(stage = pla_lan$stage, stageNext = pla_lan$stagenext, surv = pla_lan$surv,
+                   size = pla_lan$leaf_number, sizeNext = pla_lan$leaf_number_august18, 
+                   flowering = pla_lan$flowers_1st_harvest, fruits = pla_lan$seedl_start_sum, number = 1)
+
+survobj <- makeSurvObj(test, surv ~ size + sizeNext)
+sizeobj <- makeGrowthObj(test, sizeNext ~ size)
+fecobj <- makeFecObj(test, Formula = fruits ~ size)
+
+
+makeIPMFmatrix(survObj = survobj, growObj = sizeobj)
+
+plot(sizeobj)
